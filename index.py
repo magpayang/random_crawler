@@ -8,6 +8,7 @@ session = HTMLSession()
 
 
 def func_0(input_url):
+    """  """
     r = session.get(input_url)
     all_links = list(r.html.absolute_links)
     my_random = random.randint(0, len(all_links))
