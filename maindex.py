@@ -21,11 +21,11 @@ session = HTMLSession()
 def func_0(url, filter_string):
     """ given url, produce all absolute links, then return links that match the filter string """
     try:
-        resp.close()
-    except:
-        pass
-    finally:
         resp = session.get(url)
+    except:
+        resp.close()  # attempt to fix
+        resp = session.get(url)  # retry
+    finally:
         all_links = resp.html.absolute_links
         filtered_links = list(filter(lambda entry: filter_string in entry, all_links))
         return filtered_links
@@ -54,16 +54,19 @@ def func_1(input_link, filter_0, filter_1, enable_debug=False):
 def func_2(input_link, folder_name, count=None, enable_debug=False):
     """ given image link, get the bytes response, produce the image name, then save the file """
     try:
-        resp.close()
-    except:
-        pass
-    finally:
         resp = session.get(input_link)
+    except:
+        resp.close()
+        resp = session.get(input_link)
+    finally:
         image_name = folder_name+input_link.split("/")[-1]
 
         if "%28" in image_name and "%29" in image_name:
             image_name = image_name.replace("%28", "(")
             image_name = image_name.replace("%29", ")")
+
+        if "%2C" in image_name:
+            image_name = image_name.replace("%2C", ",")
 
         with open(image_name, 'wb') as file:
             file.write(resp.content)
@@ -81,12 +84,15 @@ def func_3(input_url, filter):
         name = name.replace("(", "%28")
         name = name.replace(")", "%29")
 
+    if "," in name:
+        name = name.replace(",", "%2C")
+
     try:
-        resp.close()
-    except:
-        pass
-    finally:
         resp = session.get(input_url)
+    except:
+        resp.close()
+        resp = session.get(input_url)
+    finally:
         all_links = resp.html.absolute_links
 
         for entry in all_links:
@@ -106,11 +112,11 @@ def catalogue_links(input_links, output_file):
     """ pass """
     with open(output_file, 'a', encoding="UTF-8", newline="") as file:
         csv_writer = csv.writer(file)
-        csv_writer.writerow(["count" ,"image name" ,"url", "date"])
+        csv_writer.writerow(["count", "image name", "url", "date", "delay used"])
         count = 0
         for entry in input_links:
             name = entry.split(":")[-1]
-            csv_writer.writerow([count, name, entry, time.asctime()])
+            csv_writer.writerow([count, name, entry, time.asctime(), delay])
             count += 1
 
 
@@ -123,7 +129,9 @@ def main():
 
     # this is a debug line, listed here must match the output of func_2
     # not matching indicates a skip
+    print("urls found")
     py_notes.enu(starting_url_image_links)
+    print("downloading...")
 
     counter = 0
     for entry in starting_url_image_links:
@@ -138,8 +146,8 @@ def main():
             print(counter, entry, true_link)
         counter += 1
 
-    print()
     print("Done")
+    print()
 
     return starting_url_non_image_links
 
