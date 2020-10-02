@@ -1,6 +1,7 @@
 from requests_html import HTMLSession
 import csv
 import py_notes
+import time
 
 # import requests
 
@@ -12,6 +13,7 @@ true_image_link_filter = "https://upload.wikimedia.org/wikipedia/commons/"
 image_folder_name = "./pics/"
 log_file_name = image_folder_name + "main_page.csv"
 
+delay = 6
 
 session = HTMLSession()
 
@@ -59,6 +61,10 @@ def func_2(input_link, folder_name, count=None, enable_debug=False):
         resp = session.get(input_link)
         image_name = folder_name+input_link.split("/")[-1]
 
+        if "%28" in image_name and "%29" in image_name:
+            image_name = image_name.replace("%28", "(")
+            image_name = image_name.replace("%29", ")")
+
         with open(image_name, 'wb') as file:
             file.write(resp.content)
             if enable_debug:
@@ -67,9 +73,14 @@ def func_2(input_link, folder_name, count=None, enable_debug=False):
 
 def func_3(input_url, filter):
     """ two stage filter aimed at extracting the link that contains the highest resolution """
-    name = input_url.split(":")[-1]
     tempo_array_0 = []
     tempo_array_1 = []
+
+    name = input_url.split(":")[-1]
+    if "(" in name and ")" in name:
+        name = name.replace("(", "%28")
+        name = name.replace(")", "%29")
+
     try:
         resp.close()
     except:
@@ -95,11 +106,11 @@ def catalogue_links(input_links, output_file):
     """ pass """
     with open(output_file, 'a', encoding="UTF-8", newline="") as file:
         csv_writer = csv.writer(file)
-        csv_writer.writerow(["count" ,"image name" ,"url"])
+        csv_writer.writerow(["count" ,"image name" ,"url", "date"])
         count = 0
         for entry in input_links:
             name = entry.split(":")[-1]
-            csv_writer.writerow([count, name, entry])
+            csv_writer.writerow([count, name, entry, time.asctime()])
             count += 1
 
 
@@ -116,6 +127,8 @@ def main():
 
     counter = 0
     for entry in starting_url_image_links:
+        time.sleep(delay)
+
         true_link = func_3(entry, true_image_link_filter)
 
         if len(true_link) == 1:  # assumed we have only one entry here
